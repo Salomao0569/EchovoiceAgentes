@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta - Biocardio</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .info-value {
+            color: #2c3e50;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin: 20px 0;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <a href="index.html" class="back-link">← Voltar ao Assistente</a>
+
+        <div class="dashboard-header">
+            <h1>🫀 Minha Conta</h1>
+        </div>
+
+        <div id="loadingMessage" class="loading">Carregando informações...</div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Informações do Usuário -->
+            <div class="card">
+                <h2>👤 Informações da Conta</h2>
+                <div class="info-row">
+                    <span class="info-label">Nome:</span>
+                    <span class="info-value" id="userName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value" id="userEmail">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Membro desde:</span>
+                    <span class="info-value" id="memberSince">-</span>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <h2>⚡ Ações Rápidas</h2>
+                <a href="index.html" class="btn btn-primary">Processar Nova Consulta</a>
+                <button id="logoutBtn" class="btn btn-secondary">Sair da Conta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK via CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-init.js"></script>
+
+    <script>
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged(async (user) => {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const dashboardContent = document.getElementById('dashboardContent');
+
+            if (user) {
+                document.getElementById('userName').textContent = user.displayName || 'Não informado';
+                document.getElementById('userEmail').textContent = user.email;
+
+                const creationDate = new Date(user.metadata.creationTime);
+                document.getElementById('memberSince').textContent = creationDate.toLocaleDateString('pt-BR');
+
+                loadingMessage.style.display = 'none';
+                dashboardContent.style.display = 'block';
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Erro ao sair:', error);
+            }
+        });
+    </script>
+</body>
+</html>

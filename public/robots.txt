@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /
+
+# Este é um sistema privado de uso médico profissional
+# Não indexar em motores de busca
+
+

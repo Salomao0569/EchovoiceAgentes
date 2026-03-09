@@ -30,3 +30,4 @@ mcp-config.json
 npm-debug.log*
 
 
+.firebase/
