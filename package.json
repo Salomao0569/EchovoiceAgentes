@@ -1,0 +1,32 @@
+{
+  "name": "echovoice-agentes",
+  "version": "1.0.0",
+  "description": "EchoVoice Agentes - AI Medical Assistant",
+  "main": "index.html",
+  "scripts": {
+    "dev": "firebase emulators:start",
+    "build": "echo 'No build step required for static site'",
+    "firebase:login": "firebase login",
+    "firebase:list": "firebase projects:list",
+    "firebase:use": "firebase use echovoice-agentes",
+    "deploy": "firebase deploy"
+  },
+  "keywords": [
+    "cardiologia",
+    "medicina",
+    "ia",
+    "prontuario"
+  ],
+  "author": "Dr. Salomão Alcolumbre",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "firebase": "^12.7.0",
+    "openai": "^4.73.0"
+  },
+  "devDependencies": {
+    "@netlify/mcp": "^1.15.1",
+    "firebase-tools": "^15.3.1",
+    "netlify-cli": "^17.36.4"
+  }
+}

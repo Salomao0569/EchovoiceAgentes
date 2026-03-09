@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Netlify
+.netlify/
+.env
+.env.local
+.env.production
+.env.development
+
+# Stripe (não commitar chaves!)
+stripe-config.local.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MCP Config (contém tokens sensíveis)
+mcp-config.json
+
+# Logs
+*.log
+npm-debug.log*
+
+

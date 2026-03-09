@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="description" content="Assistente de Cardiologia com IA para documentação médica - Biocardio">
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cardio Biocardio">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    
+    <title>Assistente Cardiologia Clínica - Biocardio</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos para tela de carregamento */
+        #authLoading {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #authLoading::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        
+        #authLoading::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        
+        #authLoading > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        #authLoading .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid white;
+            border-right: 5px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 24px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+        
+        #authLoading p {
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Barra de usuário logado */
+        .user-bar {
+            background: linear-gradient(to right, #ffffff, #f8fafc);
+            border-bottom: 2px solid #f1f5f9;
+            padding: 14px 32px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .user-bar .user-email {
+            color: #1e293b;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 102, 204, 0.05);
+            border-radius: 20px;
+            letter-spacing: 0.01em;
+        }
+        
+        .user-bar .admin-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-bar .admin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .user-bar .logout-btn {
+            background: linear-gradient(135deg, #d63031 0%, #c23030 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(214, 48, 49, 0.2);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+        }
+        
+        .user-bar .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+        
+        /* User bar mobile */
+        @media (max-width: 768px) {
+            .user-bar {
+                padding: 12px 20px;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            
+            .user-bar .user-email {
+                font-size: 0.8125rem;
+                padding: 6px 12px;
+            }
+            
+            .user-bar .logout-btn {
+                padding: 8px 20px;
+                font-size: 0.875rem;
+            }
+        }
+        
+        #appContent {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de carregamento da autenticação -->
+    <div id="authLoading">
+        <div class="spinner"></div>
+        <p>Verificando autenticação...</p>
+    </div>
+
+    <!-- Conteúdo do app (só aparece após autenticação) -->
+    <div id="appContent">
+        <!-- Barra de usuário -->
+        <div class="user-bar">
+            <span class="user-email">👤 <span id="userEmail"></span></span>
+            <a href="admin.html" id="adminBtn" class="admin-btn" style="display: none;">👥 Usuários</a>
+            <button class="logout-btn" id="logoutBtn">Sair</button>
+        </div>
+        
+        <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>🫀 Assistente Cardiologia Clínica</h1>
+                <p class="subtitle">Biocardio - Dr. Salomão Alcolumbre</p>
+            </div>
+        </header>
+
+        <main>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Entrada de Dados</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="quick">⚡ Modo Rápido</button>
+                        <button class="tab-btn" data-tab="structured">📋 Modo Estruturado</button>
+                    </div>
+                </div>
+                
+                <!-- Modo Rápido: Texto Livre -->
+                <div id="quick-tab" class="tab-content active">
+                    <p class="hint">Digite ou dite suas anotações de consulta abaixo (pode ser informal, com abreviações ou em tópicos)</p>
+                    <div class="input-section">
+                        <div class="textarea-wrapper">
+                            <textarea
+                                id="inputText"
+                                placeholder="Ex:&#10;&#10;Paciente 65a, M, hipertenso, diabético&#10;QP: dor precordial há 2h, em aperto, irradiando para MSE&#10;PA: 160x100 FC: 95 Tax: 36.5&#10;ECG: sem alterações agudas&#10;Troponina: pendente&#10;&#10;Ou qualquer formato de anotação rápida..."
+                                rows="12"
+                            ></textarea>
+                            <button id="voiceBtn" class="btn-voice" title="Gravar áudio (clique para iniciar)">
+                                <span class="voice-icon">🎤</span>
+                                <span class="voice-status"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modo Estruturado: Formulário -->
+                <div id="structured-tab" class="tab-content">
+                    <p class="hint">Preencha os campos abaixo de acordo com a consulta</p>
+                    <form id="structuredForm" class="structured-form">
+                        
+                        <!-- Sinais Vitais -->
+                        <div class="form-section">
+                            <h3 class="section-title">📊 Sinais Vitais</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="pa_d">PA Direita (mmHg)</label>
+                                    <input type="text" id="pa_d" placeholder="Ex: 120x80" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="pa_e">PA Esquerda (mmHg)</label>
+                                    <input type="text" id="pa_e" placeholder="Ex: 120x80" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="fc">FC (bpm)</label>
+                                    <input type="text" id="fc" placeholder="Ex: 75" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="temp">Temperatura (°C)</label>
+                                    <input type="text" id="temp" placeholder="Ex: 36.5" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Queixa Principal -->
+                        <div class="form-section">
+                            <h3 class="section-title">💬 Queixa Principal</h3>
+                            <div class="form-group">
+                                <textarea id="queixa" rows="2" placeholder="Descreva a queixa principal do paciente..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- História da Doença Atual -->
+                        <div class="form-section">
+                            <h3 class="section-title">📝 História da Doença Atual (HDA)</h3>
+                            <div class="form-group">
+                                <textarea id="hda" rows="4" placeholder="Descreva a evolução dos sintomas, tempo de início, fatores desencadeantes, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Antecedentes -->
+                        <div class="form-section">
+                            <h3 class="section-title">🏥 Antecedentes Patológicos</h3>
+                            <div class="form-group">
+                                <textarea id="antecedentes" rows="3" placeholder="HAS, DM, DAC, AVC prévio, cirurgias, alergias, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Hábitos -->
+                        <div class="form-section">
+                            <h3 class="section-title">🚶 Hábitos de Vida</h3>
+                            <div class="form-group">
+                                <textarea id="habitos_vida" rows="2" placeholder="Atividade física, sedentarismo, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-title">🍷 Hábitos Sociais</h3>
+                            <div class="form-group">
+                                <textarea id="habitos_sociais" rows="2" placeholder="Tabagismo, etilismo, uso de drogas..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Antecedentes Familiares -->
+                        <div class="form-section">
+                            <h3 class="section-title">👨‍👩‍👧‍👦 Antecedentes Familiares</h3>
+                            <div class="form-group">
+                                <textarea id="antecedentes_fam" rows="2" placeholder="História familiar de doenças cardiovasculares, morte súbita, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Alimentação e Sono -->
+                        <div class="form-section">
+                            <h3 class="section-title">🍽️ Alimentação e Sono</h3>
+                            <div class="form-group">
+                                <textarea id="alimentacao_sono" rows="2" placeholder="Padrão alimentar, qualidade do sono, horários..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Medicamentos -->
+                        <div class="form-section">
+                            <h3 class="section-title">💊 Medicamentos em Uso</h3>
+                            <div class="form-group">
+                                <textarea id="medicamentos" rows="3" placeholder="Liste os medicamentos, doses e horários..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Exame Físico -->
+                        <div class="form-section">
+                            <h3 class="section-title">🔍 Exame Físico</h3>
+                            <div class="form-group">
+                                <textarea id="exame_fisico" rows="4" placeholder="Estado geral, ausculta cardíaca/pulmonar, edemas, pulsos, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Eletrocardiograma -->
+                        <div class="form-section">
+                            <h3 class="section-title">📈 Eletrocardiograma (ECG)</h3>
+                            <div class="form-group">
+                                <textarea id="ecg" rows="2" placeholder="Ritmo, frequência, eixo, alterações ST-T, bloqueios, etc..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Exames Realizados -->
+                        <div class="form-section">
+                            <h3 class="section-title">🧪 Exames Realizados</h3>
+                            <div class="form-group">
+                                <textarea id="exames" rows="3" placeholder="Laboratoriais, imagem (ECO, MAPA, Holter, TC, RM), resultados principais..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Conduta -->
+                        <div class="form-section">
+                            <h3 class="section-title">⚕️ Conduta</h3>
+                            <div class="form-group">
+                                <textarea id="conduta" rows="3" placeholder="Hipóteses diagnósticas, prescrições, orientações, retorno..."></textarea>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="button-group">
+                    <button id="processBtn" class="btn-primary">
+                        <span class="btn-icon">✨</span>
+                        Processar com IA
+                    </button>
+                    <button id="clearBtn" class="btn-secondary">
+                        <span class="btn-icon">🗑️</span>
+                        Limpar Campos
+                    </button>
+                </div>
+                
+                <!-- Alerta de dados pendentes -->
+                <div id="pendingAlert" class="pending-alert" style="display: none;">
+                    <span class="alert-icon">⚠️</span>
+                    <span class="alert-text">Você tem um caso processado. Para iniciar nova consulta, clique em "Limpar e Nova Consulta" abaixo.</span>
+                </div>
+            </div>
+
+            <!-- Evolução para ProDoctor -->
+            <div class="card output-card" id="outputCard" style="display: none;">
+                <div class="card-header evolution-header">
+                    <div>
+                        <h2>📋 Evolução para ProDoctor</h2>
+                        <p class="hint">Texto formatado pronto para copiar e colar no prontuário</p>
+                    </div>
+                    <button id="copyBtn" class="btn-icon-only" title="Copiar para área de transferência">
+                        <span>📋</span>
+                    </button>
+                </div>
+                
+                <div class="output-section">
+                    <div id="outputText" class="output-content evolution-content"></div>
+                </div>
+            </div>
+
+            <!-- Análise Clínica Expert -->
+            <div class="card analysis-card" id="analysisCard" style="display: none;">
+                <div class="card-header analysis-header">
+                    <h2>🎓 Análise Clínica Expert</h2>
+                    <p class="hint">Interpretação do caso por especialista em cardiologia</p>
+                </div>
+                
+                <div class="analysis-section">
+                    <div id="analysisText" class="analysis-content"></div>
+                </div>
+            </div>
+
+            <!-- Chat do Caso -->
+            <div class="card chat-card" id="chatCard" style="display: none;">
+                <div class="card-header chat-header">
+                    <h2>💬 Discussão do Caso</h2>
+                    <p class="hint">Faça perguntas e discuta aspectos específicos deste caso</p>
+                </div>
+                
+                <div class="chat-section">
+                    <div id="chatHistory" class="chat-history">
+                        <!-- Mensagens aparecerão aqui -->
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="Digite sua pergunta ou comentário sobre este caso..."
+                            rows="3"
+                        ></textarea>
+                        <button id="sendChatBtn" class="btn-primary">
+                            <span class="btn-icon">💬</span>
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button id="newBtn" class="btn-new-case btn-large">
+                    <span class="btn-icon">🔄</span>
+                    Limpar e Nova Consulta
+                </button>
+                <button id="exportBtn" class="btn-secondary btn-large">
+                    <span class="btn-icon">📥</span>
+                    Exportar Caso Completo
+                </button>
+            </div>
+
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processando com IA...</p>
+            </div>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+        </main>
+
+        <footer>
+            <p>© 2026 Biocardio | Assistente baseado em IA | Uso exclusivo médico profissional</p>
+            <p class="disclaimer">⚠️ Este sistema é uma ferramenta de apoio. Decisões clínicas são de responsabilidade do médico assistente.</p>
+        </footer>
+        </div>
+    </div>
+
+    <!-- Firebase SDK via CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-init.js"></script>
+
+    <!-- Scripts de autenticação -->
+    <script>
+        const auth = firebase.auth();
+
+        const authLoading = document.getElementById('authLoading');
+        const appContent = document.getElementById('appContent');
+        const userEmailSpan = document.getElementById('userEmail');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminBtn = document.getElementById('adminBtn');
+
+        // Monitorar estado de autenticação
+        auth.onAuthStateChanged((user) => {
+            // Esconder loading
+            authLoading.style.display = 'none';
+
+            if (!user) {
+                // Não está logado - redirecionar para login
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Verificar se o e-mail está autorizado
+            if (!isEmailAutorizado(user.email)) {
+                // E-mail não autorizado - fazer logout e redirecionar
+                auth.signOut().then(() => {
+                    window.location.href = 'login.html';
+                });
+                return;
+            }
+
+            // Usuário autenticado e autorizado - mostrar app
+            window.currentUser = user;
+            userEmailSpan.textContent = user.email;
+            appContent.style.display = 'block';
+
+            // Mostrar botão de admin apenas para o administrador
+            if (user.email.toLowerCase() === EMAIL_ADMIN.toLowerCase()) {
+                adminBtn.style.display = 'inline-flex';
+            }
+        });
+
+        // Handler do botão de logout
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao fazer logout. Tente novamente.');
+            }
+        });
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

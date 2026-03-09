@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Gerenciar Usuários - Biocardio Admin</title>
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-header h2 {
+            font-size: 1.125rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 12px 24px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .user-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-item.admin {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fbbf24;
+        }
+
+        .user-item.inactive {
+            opacity: 0.5;
+            background: #f1f5f9;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        .user-item.admin .user-avatar {
+            background: #fbbf24;
+            color: #78350f;
+        }
+
+        .user-details h3 {
+            font-size: 1rem;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+
+        .user-details p {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 0.8125rem;
+            border-radius: 6px;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-admin {
+            background: #fbbf24;
+            color: #78350f;
+        }
+
+        .badge-active {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-inactive {
+            background: #94a3b8;
+            color: white;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .access-denied {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .access-denied-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .access-denied h1 {
+            color: #dc2626;
+            margin-bottom: 12px;
+        }
+
+        .access-denied p {
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de carregamento -->
+    <div id="loadingScreen" class="loading" style="min-height: 100vh; align-items: center;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Acesso negado -->
+    <div id="accessDenied" class="access-denied" style="display: none;">
+        <div class="access-denied-icon">🚫</div>
+        <h1>Acesso Negado</h1>
+        <p>Apenas o administrador pode acessar esta página.</p>
+        <a href="index.html" class="btn btn-primary">Voltar ao Início</a>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div id="mainContent" style="display: none;">
+        <header class="header">
+            <h1>👥 Gerenciar Usuários</h1>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-secondary">← Voltar</a>
+            </div>
+        </header>
+
+        <div class="container">
+            <div id="alertBox" class="alert"></div>
+
+            <!-- Adicionar usuário -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>➕ Adicionar Novo Usuário</h2>
+                </div>
+                <div class="card-body">
+                    <form id="addUserForm">
+                        <div class="form-row">
+                            <input type="email" id="newEmail" class="input" placeholder="E-mail do usuário *" required>
+                            <input type="text" id="newName" class="input" placeholder="Nome (opcional)">
+                            <button type="submit" id="addBtn" class="btn btn-primary">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de usuários -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Usuários Autorizados (<span id="userCount">0</span>)</h2>
+                </div>
+                <div class="card-body">
+                    <div id="userListLoading" class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                    <div id="userList" class="user-list" style="display: none;"></div>
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <p>Nenhum usuário cadastrado ainda.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+
+    <script>
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Elementos
+        const loadingScreen = document.getElementById('loadingScreen');
+        const accessDenied = document.getElementById('accessDenied');
+        const mainContent = document.getElementById('mainContent');
+        const userList = document.getElementById('userList');
+        const userListLoading = document.getElementById('userListLoading');
+        const emptyState = document.getElementById('emptyState');
+        const userCount = document.getElementById('userCount');
+        const addUserForm = document.getElementById('addUserForm');
+        const alertBox = document.getElementById('alertBox');
+
+        let currentUser = null;
+
+        // Verificar autenticação
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = user;
+
+            // Verificar se é admin
+            if (user.email.toLowerCase() !== EMAIL_ADMIN.toLowerCase()) {
+                loadingScreen.style.display = 'none';
+                accessDenied.style.display = 'flex';
+                return;
+            }
+
+            // Mostrar conteúdo
+            loadingScreen.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            // Carregar usuários
+            loadUsers();
+        });
+
+        // Migrar usuários hardcoded para o Firestore
+        async function migrateHardcodedUsers() {
+            console.log('Migrando usuários hardcoded para o Firestore...');
+            const batch = db.batch();
+
+            for (const user of EMAILS_HARDCODED) {
+                const docRef = db.collection('usuarios_autorizados').doc(user.email.toLowerCase());
+                batch.set(docRef, {
+                    nome: user.nome,
+                    ativo: true,
+                    data_criacao: firebase.firestore.FieldValue.serverTimestamp(),
+                    criado_por: 'sistema (migração inicial)'
+                });
+            }
+
+            try {
+                await batch.commit();
+                console.log('Migração concluída!');
+                showAlert('Usuários migrados com sucesso!', 'success');
+            } catch (error) {
+                console.error('Erro na migração:', error);
+                showAlert('Erro ao migrar usuários', 'error');
+            }
+        }
+
+        // Carregar usuários do Firestore
+        async function loadUsers() {
+            // Primeiro, verificar se a coleção está vazia
+            const snapshot = await db.collection('usuarios_autorizados').get();
+
+            if (snapshot.empty) {
+                // Coleção vazia - migrar usuários hardcoded
+                await migrateHardcodedUsers();
+            }
+
+            // Agora ouvir mudanças em tempo real
+            db.collection('usuarios_autorizados').onSnapshot((snapshot) => {
+                const users = [];
+                snapshot.forEach((doc) => {
+                    users.push({
+                        email: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                renderUsers(users);
+            }, (error) => {
+                console.error('Erro ao carregar usuários:', error);
+                showAlert('Erro ao carregar usuários', 'error');
+            });
+        }
+
+        // Renderizar lista de usuários
+        function renderUsers(users) {
+            userListLoading.style.display = 'none';
+
+            if (users.length === 0) {
+                userList.style.display = 'none';
+                emptyState.style.display = 'block';
+                userCount.textContent = '0';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            userList.style.display = 'flex';
+            userCount.textContent = users.length;
+
+            // Ordenar: admin primeiro, depois por email
+            users.sort((a, b) => {
+                if (a.email === EMAIL_ADMIN) return -1;
+                if (b.email === EMAIL_ADMIN) return 1;
+                return a.email.localeCompare(b.email);
+            });
+
+            userList.innerHTML = users.map(user => {
+                const isAdmin = user.email.toLowerCase() === EMAIL_ADMIN.toLowerCase();
+                const isActive = user.ativo !== false;
+
+                return `
+                    <div class="user-item ${isAdmin ? 'admin' : ''} ${!isActive ? 'inactive' : ''}">
+                        <div class="user-info">
+                            <div class="user-avatar">${isAdmin ? '👑' : '👤'}</div>
+                            <div class="user-details">
+                                <h3>
+                                    ${user.nome || user.email}
+                                    ${isAdmin ? '<span class="badge badge-admin">Admin</span>' : ''}
+                                    ${!isAdmin ? (isActive ? '<span class="badge badge-active">Ativo</span>' : '<span class="badge badge-inactive">Inativo</span>') : ''}
+                                </h3>
+                                <p>${user.email}</p>
+                            </div>
+                        </div>
+                        ${!isAdmin ? `
+                            <div class="user-actions">
+                                <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUser('${user.email}', ${isActive})">
+                                    ${isActive ? 'Desativar' : 'Ativar'}
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.email}')">
+                                    Remover
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Adicionar usuário
+        addUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('newEmail').value.trim().toLowerCase();
+            const nome = document.getElementById('newName').value.trim();
+
+            if (!email) return;
+
+            const addBtn = document.getElementById('addBtn');
+            addBtn.disabled = true;
+            addBtn.textContent = 'Adicionando...';
+
+            try {
+                await db.collection('usuarios_autorizados').doc(email).set({
+                    nome: nome,
+                    ativo: true,
+                    data_criacao: firebase.firestore.FieldValue.serverTimestamp(),
+                    criado_por: currentUser.email
+                });
+
+                showAlert(`Usuário ${email} adicionado com sucesso!`, 'success');
+                document.getElementById('newEmail').value = '';
+                document.getElementById('newName').value = '';
+            } catch (error) {
+                console.error('Erro ao adicionar:', error);
+                showAlert('Erro ao adicionar usuário', 'error');
+            } finally {
+                addBtn.disabled = false;
+                addBtn.textContent = 'Adicionar';
+            }
+        });
+
+        // Alternar status do usuário
+        async function toggleUser(email, currentStatus) {
+            try {
+                await db.collection('usuarios_autorizados').doc(email).update({
+                    ativo: !currentStatus
+                });
+                showAlert(`Usuário ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`, 'success');
+            } catch (error) {
+                console.error('Erro ao atualizar:', error);
+                showAlert('Erro ao atualizar usuário', 'error');
+            }
+        }
+
+        // Deletar usuário
+        async function deleteUser(email) {
+            if (!confirm(`Tem certeza que deseja remover ${email}?`)) return;
+
+            try {
+                await db.collection('usuarios_autorizados').doc(email).delete();
+                showAlert(`Usuário ${email} removido com sucesso!`, 'success');
+            } catch (error) {
+                console.error('Erro ao remover:', error);
+                showAlert('Erro ao remover usuário', 'error');
+            }
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type) {
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type}`;
+            alertBox.style.display = 'block';
+
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

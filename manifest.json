@@ -1,0 +1,22 @@
+{
+  "name": "Assistente Cardiologia Biocardio",
+  "short_name": "Cardio IA",
+  "description": "Assistente de Cardiologia com IA para documentação médica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0066cc",
+  "theme_color": "#0066cc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "healthcare", "productivity"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}
+

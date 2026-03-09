@@ -1,0 +1,38 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "netlify/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/processMedicalNotes",
+        "run": {
+          "serviceId": "processmedicalnotes",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "source": "/api/chatCase",
+        "run": {
+          "serviceId": "chatcase",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "source": "/api/transcribeAudio",
+        "run": {
+          "serviceId": "transcribeaudio",
+          "region": "southamerica-east1"
+        }
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions"
+  }
+}
