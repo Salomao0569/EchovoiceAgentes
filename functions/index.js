@@ -35,6 +35,71 @@ async function verifyAuth(req, res) {
 }
 
 // =============================================================================
+// RAG Integration — Jarvis (ChromaDB + LlamaIndex on VPS)
+// =============================================================================
+
+const RAG_URL = process.env.RAG_API_URL || 'http://187.77.52.133:8000';
+const RAG_PASSWORD = process.env.RAG_API_PASSWORD || 'biocardio2026';
+
+/**
+ * Consulta a RAG de cardiologia (Jarvis) para buscar evidências reais das diretrizes.
+ * Retorna null silenciosamente se a RAG estiver indisponível (fallback para GPT puro).
+ */
+async function queryRAG(pergunta) {
+    try {
+        // 1. Login para obter cookie de sessão
+        const loginRes = await fetch(`${RAG_URL}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senha: RAG_PASSWORD }),
+            signal: AbortSignal.timeout(5000)
+        });
+
+        if (!loginRes.ok) {
+            console.warn('RAG login falhou:', loginRes.status);
+            return null;
+        }
+
+        // Extrair cookie de sessão
+        const setCookie = loginRes.headers.get('set-cookie') || '';
+
+        // 2. Consultar RAG com o cookie
+        const ragRes = await fetch(`${RAG_URL}/api/perguntar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': setCookie.split(';')[0]
+            },
+            body: JSON.stringify({ pergunta }),
+            signal: AbortSignal.timeout(15000)
+        });
+
+        if (!ragRes.ok) {
+            console.warn('RAG query falhou:', ragRes.status);
+            return null;
+        }
+
+        const data = await ragRes.json();
+
+        if (!data.resposta) return null;
+
+        // Formatar resposta com fontes (arquivo + página)
+        let resultado = data.resposta;
+        if (data.fontes && data.fontes.length > 0) {
+            const fontesFormatadas = data.fontes
+                .map(f => `- ${f.arquivo}, p. ${f.pagina}`)
+                .join('\n');
+            resultado += `\n\nFONTES:\n${fontesFormatadas}`;
+        }
+
+        return resultado;
+    } catch (error) {
+        console.warn('RAG indisponível, continuando sem evidências:', error.message);
+        return null;
+    }
+}
+
+// =============================================================================
 // SYSTEM PROMPTS (identical to Netlify versions)
 // =============================================================================
 
@@ -131,7 +196,16 @@ exports.processMedicalNotes = onRequest({
 
         const evolution = evolutionCompletion.choices[0].message.content;
 
-        // 2. Gerar ANÁLISE CLÍNICA EXPERT
+        // 2. Consultar RAG para evidências reais (em paralelo não bloqueia)
+        const ragEvidencias = await queryRAG(
+            `Diretrizes e recomendações relevantes para o seguinte caso cardiológico: ${notes}`
+        );
+
+        const ragSection = ragEvidencias
+            ? `\n\n📋 EVIDÊNCIAS DAS DIRETRIZES (fonte: banco vetorial ChromaDB com diretrizes SBC reais):\n${ragEvidencias}\n\nIMPORTANTE: Use as evidências acima como base PRINCIPAL para sua análise. Cite as diretrizes e páginas específicas quando disponíveis.`
+            : `\n\nNota: RAG de diretrizes indisponível. Baseie-se no seu conhecimento de diretrizes SBC/ESC/AHA.`;
+
+        // 3. Gerar ANÁLISE CLÍNICA EXPERT (agora com evidências da RAG)
         const analysisPrompt = `Você é um cardiologista doutorado e experiente. Analise o seguinte caso clínico de forma CRÍTICA e OBJETIVA:
 
 CASO:
@@ -139,8 +213,9 @@ ${notes}
 
 EVOLUÇÃO GERADA:
 ${evolution}
+${ragSection}
 
-IMPORTANTE: Seja CRÍTICO e HONESTO. Se houver problemas, erros ou pontos questionáveis, APONTE claramente. Não concorde apenas por concordar.
+IMPORTANTE: Seja CRÍTICO e HONESTO. Se houver problemas, erros ou pontos questionáveis, APONTE claramente. Não concorde apenas por concordar. Quando citar uma diretriz, cite a fonte REAL com página se disponível nas evidências acima.
 
 Forneça uma análise estruturada com:
 
@@ -157,7 +232,7 @@ Analise criticamente a conduta proposta:
 - Ajustes necessários (seja direto)
 
 ### 📚 REFERÊNCIAS
-- Diretrizes relevantes (SBC/ESC/AHA)
+- Diretrizes relevantes (cite as fontes REAIS das evidências fornecidas acima)
 - Estudos importantes se aplicável
 
 Seja DIRETO, CRÍTICO e PRÁTICO. Máximo 350 palavras.
@@ -194,6 +269,7 @@ STATUS: [ADEQUADO] se a conduta está correta OU [ATENÇÃO] se há problemas/di
             evolution,
             analysis,
             analysisStatus: status,
+            ragUsed: !!ragEvidencias,
             usage: {
                 evolutionTokens: evolutionCompletion.usage.total_tokens,
                 analysisTokens: analysisCompletion.usage.total_tokens,
@@ -249,6 +325,16 @@ exports.chatCase = onRequest({
             apiKey: process.env.OPENAI_API_KEY
         });
 
+        // Buscar evidências da RAG para a última pergunta do usuário
+        const lastUserMsg = [...chatHistory].reverse().find(m => m.role === 'user');
+        const ragEvidencias = lastUserMsg
+            ? await queryRAG(`${lastUserMsg.content} — contexto: ${caseContext.notes}`)
+            : null;
+
+        const ragContext = ragEvidencias
+            ? `\n\nEVIDÊNCIAS DAS DIRETRIZES (ChromaDB — diretrizes SBC reais):\n${ragEvidencias}\nUse estas evidências para fundamentar sua resposta. Cite diretriz e página quando disponível.`
+            : '';
+
         // Construir contexto do caso para o chat
         const systemPrompt = `Você é um cardiologista doutorado experiente ajudando um colega médico a discutir um caso clínico específico.
 
@@ -256,11 +342,12 @@ CONTEXTO DO CASO:
 - Anotações originais: ${caseContext.notes}
 - Evolução gerada: ${caseContext.evolution}
 - Análise clínica: ${caseContext.analysis}
+${ragContext}
 
 Responda de forma SUCINTA, PRÁTICA e OBJETIVA (estilo conversa entre colegas médicos experientes):
 - Seja direto ao ponto
 - Use linguagem técnica apropriada
-- Cite evidências/diretrizes quando relevante
+- Cite evidências/diretrizes REAIS quando disponíveis nas evidências acima
 - Máximo 150 palavras por resposta
 - Se discordar de algo, explique o motivo com base em evidências
 
